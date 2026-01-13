@@ -1,1 +1,10 @@
+{
+  "name": "omie-middleware",
+  "version": "1.0.0",
+  "description": "Middleware de auditoria (read-only) para integração GPT + Omie",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  }
+}
 
