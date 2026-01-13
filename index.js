@@ -2,15 +2,18 @@ const http = require('http');
 
 const PORT = process.env.PORT || 3000;
 
+// =========================
+// Utilitários
+// =========================
 function readJsonBody(req) {
   return new Promise((resolve, reject) => {
     let data = '';
-    req.on('data', (chunk) => { data += chunk; });
+    req.on('data', chunk => data += chunk);
     req.on('end', () => {
       if (!data) return resolve({});
       try {
         resolve(JSON.parse(data));
-      } catch (e) {
+      } catch {
         reject(new Error('JSON inválido'));
       }
     });
@@ -18,20 +21,44 @@ function readJsonBody(req) {
 }
 
 function sendJson(res, statusCode, payload) {
-  res.writeHead(statusCode, { 'Content-Type': 'application/json; charset=utf-8' });
+  res.writeHead(statusCode, {
+    'Content-Type': 'application/json; charset=utf-8'
+  });
   res.end(JSON.stringify(payload));
 }
 
+// =========================
+// Servidor
+// =========================
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const path = url.pathname;
 
-  // Rota: saúde do serviço
+  // -------------------------
+  // Rota raiz (melhoria)
+  // -------------------------
+  if (req.method === 'GET' && path === '/') {
+    return sendJson(res, 200, {
+      status: 'ok',
+      service: 'omie-middleware',
+      message: 'Middleware no ar',
+      routes: [
+        'GET /health',
+        'POST /audit/clientes/buscar'
+      ]
+    });
+  }
+
+  // -------------------------
+  // Health check
+  // -------------------------
   if (req.method === 'GET' && path === '/health') {
     return sendJson(res, 200, { status: 'ok' });
   }
 
-  // Rota: auditoria (mock) - buscar cliente
+  // -------------------------
+  // Auditoria mock - Clientes
+  // -------------------------
   if (req.method === 'POST' && path === '/audit/clientes/buscar') {
     try {
       const body = await readJsonBody(req);
@@ -46,7 +73,7 @@ const server = http.createServer(async (req, res) => {
         });
       }
 
-      // Resposta simulada (mock). Próximo passo: trocar por consulta real ao Omie.
+      // Resposta MOCK (simulada)
       return sendJson(res, 200, {
         audit: {
           modulo: 'clientes',
@@ -66,15 +93,23 @@ const server = http.createServer(async (req, res) => {
           }
         }
       });
+
     } catch (err) {
-      return sendJson(res, 400, { error: err.message || 'Erro ao ler JSON' });
+      return sendJson(res, 400, {
+        error: err.message || 'Erro ao processar requisição'
+      });
     }
   }
 
-  // Fallback: rota não existe
+  // -------------------------
+  // Fallback
+  // -------------------------
   return sendJson(res, 404, { error: 'Rota não encontrada' });
 });
 
+// =========================
+// Start
+// =========================
 server.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
