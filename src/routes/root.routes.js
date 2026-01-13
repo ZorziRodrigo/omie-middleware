@@ -12,7 +12,9 @@ module.exports = function rootRoutes() {
           message: 'Middleware no ar',
           routes: [
             'GET /health',
-            'POST /audit/clientes/buscar'
+            'POST /audit/clientes/buscar',
+            'POST /vendas/clientes/evolucao-mensal',
+            'POST /vendas/clientes/inativos'
           ]
         });
       }
